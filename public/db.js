@@ -3,37 +3,34 @@ const request = indexedDB.open("budget", 1);
 
 request.onupgradeneeded = function (event) {
     const db = event.target.result;
-    db.createObjectStore("pending", {
+    db.createObjectStore("budgetStore", {
         autoIncrement: true
     });
 };
 
 request.onsuccess = function (event) {
     db = event.target.result;
-
     if (navigator.onLine) {
         checkDB();
     }
 };
 
 request.onerror = function (event) {
-    console.log("Woops! " + event.target.errorCode);
+    console.log("Sorry error " + event.target.errorCode + "!");
 };
 
-function saveRecord(record) {
-    const transaction = db.transaction(["pending"], "readwrite");
-
-    const store = transaction.objectStore("pending");
-
-    store.add(record);
+function saveTransaction(record) {
+    const transaction = db.transaction(["budgetStore"], "readwrite");
+    const storage = transaction.objectStore("budgetStore");
+    storage.add(record);
 }
 
 function checkDB() {
-    const transaction = db.transaction(["pending"], "readwrite");
-    const store = transaction.objectStore("pending");
-    const getAll = store.getAll();
+    const transaction = db.transaction(["budgetStore"], "readwrite");
+    const storage = transaction.objectStore("budgetStore");
+    const getAll = storage.getAll();
 
-    getAll.onsuccess = function () {
+    getAll.onsuccess = () => {
         if (getAll.result.length > 0) {
             fetch("/api/transaction/bulk", {
                     method: "POST",
@@ -45,11 +42,9 @@ function checkDB() {
                 })
                 .then(response => response.json())
                 .then(() => {
-                    const transaction = db.transaction(["pending"], "readwrite");
-
-                    const store = transaction.objectStore("pending");
-
-                    store.clear();
+                    const transaction = db.transaction(["budgetStore"], "readwrite");
+                    const storage = transaction.objectStore("budgetStore");
+                    storage.clear();
                 });
         }
     };
